@@ -1,0 +1,24 @@
+# Minimal dependencies for Subtext MVP
+# Core API only - no frontend, no heavy libraries
+
+# Web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.19
+psycopg2-binary==2.9.9
+
+# Authentication
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# Environment
+python-dotenv==1.0.0
+
+# AI Integration
+anthropic==0.7.8
+
+# Encryption
+cryptography==41.0.7
