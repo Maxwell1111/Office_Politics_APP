@@ -19,7 +19,10 @@ COPY . .
 RUN python -m pip install --no-cache-dir -e .
 
 WORKDIR /app/www
-RUN npm install
+# Optimize npm install for memory constraints
+RUN npm install --prefer-offline --no-audit --progress=false
+# Set Node memory limit for build
+ENV NODE_OPTIONS="--max-old-space-size=400"
 RUN npm run build
 
 WORKDIR /app

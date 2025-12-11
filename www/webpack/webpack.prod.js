@@ -40,7 +40,7 @@ module.exports = {
       new TerserPlugin(
         {
           test: /\.js(\?.*)?$/i,
-          parallel: true,
+          parallel: 2,  // Reduced from true to limit memory usage
           extractComments: false,
           terserOptions: {
             compress: { drop_console: false },
@@ -51,6 +51,18 @@ module.exports = {
           }
         }
       )
-    ]
+    ],
+    // Split chunks to reduce memory during compilation
+    splitChunks: {
+      chunks: 'all',
+      maxSize: 244000,  // Split large chunks
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          priority: 10
+        }
+      }
+    }
   }
 };
