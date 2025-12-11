@@ -4,7 +4,7 @@ import traceback
 import warnings
 from typing import Awaitable, TypeVar
 
-from mediabiasscorer.memory_cache import SharedMemoryData, create_shared_memory
+from subtext.memory_cache import SharedMemoryData, create_shared_memory
 
 SHARED_MEMORY = create_shared_memory(owner=True)
 

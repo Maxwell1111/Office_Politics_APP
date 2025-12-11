@@ -7,7 +7,7 @@ from starlette.background import BackgroundTask
 from starlette.requests import Request
 from starlette.responses import FileResponse, Response, StreamingResponse
 
-from mediabiasscorer.settings import WWW_DIR
+from subtext.settings import WWW_DIR
 
 USE_GZIP = True
 LOCAL_ANALYTICS_PATH = (

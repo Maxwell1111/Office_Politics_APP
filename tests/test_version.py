@@ -5,7 +5,7 @@ Example test.
 import os
 import unittest
 
-from mediabiasscorer.version import VERSION
+from subtext.version import VERSION
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(HERE)

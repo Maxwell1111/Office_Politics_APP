@@ -9,8 +9,8 @@ from colorama import just_fix_windows_console  # type: ignore
 from fastapi import FastAPI  # type: ignore
 from fastapi.middleware.cors import CORSMiddleware
 
-from mediabiasscorer.settings import IS_TEST
-from mediabiasscorer.version import VERSION
+from subtext.settings import IS_TEST
+from subtext.version import VERSION
 
 just_fix_windows_console()
 
@@ -18,7 +18,7 @@ STARTUP_DATETIME = datetime.now()
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-APP_DISPLAY_NAME = "StatsDashPublic"
+APP_DISPLAY_NAME = "Subtext - Pocket Chief of Staff"
 
 
 def app_description() -> str:

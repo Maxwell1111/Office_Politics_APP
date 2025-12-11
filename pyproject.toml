@@ -3,8 +3,8 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mediabiasscorer"
-description = ""
+name = "subtext"
+description = "Pocket Chief of Staff - Strategic career navigation app"
 readme = "README.md"
 requires-python = ">=3.7"
 keywords = [""]

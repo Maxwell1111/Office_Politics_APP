@@ -4,7 +4,7 @@ Example test.
 
 import unittest
 
-from mediabiasscorer.version import VERSION
+from subtext.version import VERSION
 
 
 class ExampleTester(unittest.TestCase):

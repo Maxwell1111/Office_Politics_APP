@@ -8,10 +8,13 @@ import sys
 from fastapi.responses import PlainTextResponse
 from fastapi_cache import FastAPICache
 
-from mediabiasscorer.init_app import app
-from mediabiasscorer.init_frontend_app import init_frontend_app
-from mediabiasscorer.memory_cache import SharedMemoryData, create_shared_memory
-from mediabiasscorer.settings import IS_TEST
+from subtext.init_app import app
+from subtext.init_frontend_app import init_frontend_app
+from subtext.memory_cache import SharedMemoryData, create_shared_memory
+from subtext.settings import IS_TEST
+
+# Import routes
+from subtext.routes import auth, tone_decoder, power_map, logbook
 
 SHARED_MEMORY = create_shared_memory(owner=False)
 
@@ -33,6 +36,13 @@ def digest_equals(a: str, b: str) -> bool:
 @app.on_event("startup")
 async def startup():
     FastAPICache.init("fastapi-cache")
+
+
+# Register API routes
+app.include_router(auth.router, prefix="/api")
+app.include_router(tone_decoder.router, prefix="/api")
+app.include_router(power_map.router, prefix="/api")
+app.include_router(logbook.router, prefix="/api")
 
 
 @app.get("/api/health", include_in_schema=IS_TEST)

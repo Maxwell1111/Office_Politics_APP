@@ -15,7 +15,7 @@ os.environ["SHARED_MEMORY_USE_LOCK"] = "1"
 from pydantic import BaseModel
 from shared_memory_dict import SharedMemoryDict  # type: ignore
 
-SHARED_MEMORY_NAME = "mediabiasscorer"
+SHARED_MEMORY_NAME = "subtext"
 SHARED_MEMORY_SIZE = 1024 * 1024
 
 

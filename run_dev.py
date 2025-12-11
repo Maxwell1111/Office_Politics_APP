@@ -19,7 +19,7 @@ os.chdir(HERE)
 os.environ["IS_TEST"] = "1"
 
 FASTAPI_PORT = 8000
-APP_NAME = "mediabiasscorer"
+APP_NAME = "subtext"
 FASTAPI_APP = f"{APP_NAME}.app:app"
 FASTAPI_RELOAD = False  # Reload doesn't work well with VSCode auto-save feature.
 

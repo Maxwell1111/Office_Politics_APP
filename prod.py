@@ -11,7 +11,7 @@ from threading import Thread
 HERE = Path(__file__).parent
 WWW = HERE / "www"
 MAX_SPACE_NPM = 256
-APP_NAME = "mediabiasscorer"
+APP_NAME = "subtext"
 
 os.environ["NODE_OPTIONS"] = f"--max_old_space_size={MAX_SPACE_NPM}"
 

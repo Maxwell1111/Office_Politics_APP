@@ -4,7 +4,7 @@ Implements async download
 
 from fastapi import UploadFile  # type: ignore
 
-from mediabiasscorer.settings import UPLOAD_CHUNK_SIZE
+from subtext.settings import UPLOAD_CHUNK_SIZE
 
 
 async def async_download(src: UploadFile, dst: str) -> None:
