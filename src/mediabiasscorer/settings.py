@@ -31,6 +31,12 @@ IS_TEST = os.getenv("IS_TEST", "0") == "1"
 
 WWW_DIR = os.path.join(PROJECT_ROOT, "www", "dist")
 
+# VS Code executable path
+VSCODE_PATH = os.getenv(
+    "VSCODE_PATH",
+    "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+)
+
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(WWW_DIR, exist_ok=True)
