@@ -5,7 +5,7 @@ Power Map API routes
 from fastapi import APIRouter, HTTPException
 from typing import List
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from subtext.models import (
     PowerMap,
@@ -22,6 +22,12 @@ router = APIRouter(tags=["power_map"])
 power_maps: dict[str, PowerMap] = {}
 people: dict[str, Person] = {}
 relationships: dict[str, Relationship] = {}
+
+
+@router.get("/test-power-map")
+async def test_power_map() -> dict:
+    """Test endpoint to verify API is working"""
+    return {"status": "ok", "message": "Power Map API is working!"}
 
 
 @router.post("/power-maps", response_model=PowerMap)
@@ -78,7 +84,7 @@ async def add_person_to_map(power_map_id: str, request: CreatePersonRequest) -> 
 
     people[person.id] = person
     power_maps[power_map_id].people.append(person)
-    power_maps[power_map_id].updated_at = datetime.utcnow()
+    power_maps[power_map_id].updated_at = datetime.now(timezone.utc)
 
     return person
 
@@ -99,7 +105,7 @@ async def remove_person_from_map(power_map_id: str, person_id: str) -> dict:
 
     power_map = power_maps[power_map_id]
     power_map.people = [p for p in power_map.people if p.id != person_id]
-    power_map.updated_at = datetime.utcnow()
+    power_map.updated_at = datetime.now(timezone.utc)
 
     if person_id in people:
         del people[person_id]
@@ -135,7 +141,7 @@ async def add_relationship_to_map(
 
     relationships[relationship.id] = relationship
     power_map.relationships.append(relationship)
-    power_map.updated_at = datetime.utcnow()
+    power_map.updated_at = datetime.now(timezone.utc)
 
     return relationship
 
@@ -156,7 +162,7 @@ async def remove_relationship_from_map(power_map_id: str, relationship_id: str) 
 
     power_map = power_maps[power_map_id]
     power_map.relationships = [r for r in power_map.relationships if r.id != relationship_id]
-    power_map.updated_at = datetime.utcnow()
+    power_map.updated_at = datetime.now(timezone.utc)
 
     if relationship_id in relationships:
         del relationships[relationship_id]

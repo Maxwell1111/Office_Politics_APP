@@ -225,26 +225,49 @@
       // Initialize power map on load
       async function initPowerMap() {
         try {
+          console.log('Initializing power map...');
           // Try to get existing power maps
           const response = await fetch('/api/power-maps');
+          console.log('List power maps response:', response.status);
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Failed to list power maps:', errorData);
+            alert('Failed to connect to API. Please check the console for details.');
+            return;
+          }
+
           const maps = await response.json();
+          console.log('Existing power maps:', maps);
 
           if (maps.length > 0) {
             currentPowerMapId = maps[0].id;
+            console.log('Using existing power map:', currentPowerMapId);
           } else {
             // Create a new power map
+            console.log('Creating new power map...');
             const createResponse = await fetch('/api/power-maps', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name: 'My Organization', description: 'Main power map' })
             });
+
+            if (!createResponse.ok) {
+              const errorData = await createResponse.json();
+              console.error('Failed to create power map:', errorData);
+              alert('Failed to create power map. Please check the console for details.');
+              return;
+            }
+
             const newMap = await createResponse.json();
             currentPowerMapId = newMap.id;
+            console.log('Created new power map:', currentPowerMapId);
           }
 
           loadPeople();
         } catch (error) {
           console.error('Error initializing power map:', error);
+          alert('Error initializing power map. Please check the console for details.');
         }
       }
 
@@ -308,6 +331,9 @@
           notes: formData.get('notes') || null
         };
 
+        console.log('Adding person:', data);
+        console.log('Power map ID:', currentPowerMapId);
+
         try {
           const response = await fetch(`/api/power-maps/${currentPowerMapId}/people`, {
             method: 'POST',
@@ -315,9 +341,17 @@
             body: JSON.stringify(data)
           });
 
+          console.log('Response status:', response.status);
+          const responseData = await response.json();
+          console.log('Response data:', responseData);
+
           if (response.ok) {
+            console.log('Person added successfully');
             closeAddPersonModal();
             loadPeople();
+          } else {
+            console.error('Failed to add person:', responseData);
+            alert(`Failed to add person: ${responseData.detail || 'Unknown error'}`);
           }
         } catch (error) {
           console.error('Error adding person:', error);

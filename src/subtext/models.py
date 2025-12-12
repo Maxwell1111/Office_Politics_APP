@@ -2,9 +2,14 @@
 Database models for Office Politics app
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from pydantic import BaseModel, Field
+
+
+def utc_now():
+    """Get current UTC time"""
+    return datetime.now(timezone.utc)
 
 
 class Person(BaseModel):
@@ -15,8 +20,8 @@ class Person(BaseModel):
     department: str
     influence_level: int = Field(ge=1, le=10, description="Influence level from 1-10")
     notes: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class Relationship(BaseModel):
@@ -27,8 +32,8 @@ class Relationship(BaseModel):
     relationship_type: str = Field(description="e.g., 'reports_to', 'allies', 'rivals', 'mentor'")
     strength: int = Field(ge=1, le=10, description="Relationship strength from 1-10")
     notes: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class PowerMap(BaseModel):
@@ -38,8 +43,8 @@ class PowerMap(BaseModel):
     description: Optional[str] = None
     people: list[Person] = []
     relationships: list[Relationship] = []
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 # Request/Response models
