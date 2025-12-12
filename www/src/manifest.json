@@ -1,6 +1,6 @@
 {
-    "name": "subtext.org",
-    "short_name": "AmericasDigitalShield",
+    "name": "Office Politics - Career Navigation",
+    "short_name": "Office Politics",
     "icons": [
         {
             "src": "icons/manifest-icon-192.png",
@@ -15,9 +15,10 @@
             "purpose": "maskable any"
         }
     ],
-    "theme_color": "#ffffff",
-    "background_color": "#000000",
-    "start_url": "/?home=true",
-    "display": "minimal-ui",
-    "orientation": "portrait"
+    "theme_color": "#667eea",
+    "background_color": "#f7fafc",
+    "start_url": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "description": "Your Pocket Chief of Staff for Career Strategy"
 }
