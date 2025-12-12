@@ -35,13 +35,14 @@ def run_background_process() -> subprocess.Popen:  # type: ignore
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
         # Start background processes
+        port = os.environ.get("PORT", "80")
         pro = subprocess.Popen(
             [
                 "uvicorn",
                 "--host",
                 "0.0.0.0",
                 "--port",
-                "80",
+                port,
                 "--workers",
                 "8",
                 "--forwarded-allow-ips=*",
