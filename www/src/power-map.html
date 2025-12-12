@@ -155,6 +155,7 @@
     <header>
       <h1>📊 Power Map</h1>
       <p>Visualize organizational relationships and influence</p>
+      <p style="font-size: 0.875rem; opacity: 0.9; margin-top: 0.5rem;">⚠️ Demo mode: Data resets on page refresh (database coming soon)</p>
     </header>
 
     <div class="container">
@@ -277,43 +278,30 @@
       async function initPowerMap() {
         try {
           console.log('Initializing power map...');
-          // Try to get existing power maps
-          const response = await fetch('/api/power-maps');
-          console.log('List power maps response:', response.status);
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Failed to list power maps:', errorData);
-            alert('Failed to connect to API. Please check the console for details.');
+          // Check if we have a stored power map ID
+          const storedMapId = localStorage.getItem('currentPowerMapId');
+          console.log('Stored power map ID:', storedMapId);
+
+          // Always create a fresh power map (since we're using in-memory storage)
+          console.log('Creating new power map...');
+          const createResponse = await fetch('/api/power-maps', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'My Organization', description: 'Main power map' })
+          });
+
+          if (!createResponse.ok) {
+            const errorData = await createResponse.json();
+            console.error('Failed to create power map:', errorData);
+            alert('Failed to create power map. Please check the console for details.');
             return;
           }
 
-          const maps = await response.json();
-          console.log('Existing power maps:', maps);
-
-          if (maps.length > 0) {
-            currentPowerMapId = maps[0].id;
-            console.log('Using existing power map:', currentPowerMapId);
-          } else {
-            // Create a new power map
-            console.log('Creating new power map...');
-            const createResponse = await fetch('/api/power-maps', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: 'My Organization', description: 'Main power map' })
-            });
-
-            if (!createResponse.ok) {
-              const errorData = await createResponse.json();
-              console.error('Failed to create power map:', errorData);
-              alert('Failed to create power map. Please check the console for details.');
-              return;
-            }
-
-            const newMap = await createResponse.json();
-            currentPowerMapId = newMap.id;
-            console.log('Created new power map:', currentPowerMapId);
-          }
+          const newMap = await createResponse.json();
+          currentPowerMapId = newMap.id;
+          localStorage.setItem('currentPowerMapId', currentPowerMapId);
+          console.log('Created new power map:', currentPowerMapId);
 
           loadPeople();
           loadRelationships();
