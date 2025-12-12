@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Power Map - Office Politics</title>
+    <meta name="description" content="Create and manage organizational power maps" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background: #f7fafc;
+        color: #2d3748;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: transform 0.2s;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-secondary {
+        background: #718096;
+      }
+
+      .card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+
+      .person-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .person-item:last-child {
+        border-bottom: none;
+      }
+
+      .person-info h4 {
+        margin: 0 0 0.25rem 0;
+        color: #2d3748;
+      }
+
+      .person-info p {
+        margin: 0;
+        color: #718096;
+        font-size: 0.875rem;
+      }
+
+      .influence-badge {
+        background: #667eea;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+      }
+
+      .modal.active {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+      }
+
+      .form-group {
+        margin-bottom: 1rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #2d3748;
+      }
+
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e0;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #718096;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>📊 Power Map</h1>
+      <p>Visualize organizational relationships and influence</p>
+    </header>
+
+    <div class="container">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2>People in Your Network</h2>
+          <button class="btn" onclick="openAddPersonModal()">+ Add Person</button>
+        </div>
+
+        <div id="people-list">
+          <div class="empty-state">
+            <p>No people added yet. Click "Add Person" to get started.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Relationships</h2>
+        <div id="relationships-list">
+          <div class="empty-state">
+            <p>Add people first, then define their relationships.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 2rem;">
+        <a href="/" class="btn btn-secondary">← Back to Home</a>
+      </div>
+    </div>
+
+    <!-- Add Person Modal -->
+    <div id="add-person-modal" class="modal">
+      <div class="modal-content">
+        <h3>Add New Person</h3>
+        <form id="add-person-form">
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" name="name" required>
+          </div>
+          <div class="form-group">
+            <label>Title *</label>
+            <input type="text" name="title" required>
+          </div>
+          <div class="form-group">
+            <label>Department *</label>
+            <input type="text" name="department" required>
+          </div>
+          <div class="form-group">
+            <label>Influence Level (1-10) *</label>
+            <input type="number" name="influence_level" min="1" max="10" value="5" required>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea name="notes" rows="3"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn">Add Person</button>
+            <button type="button" class="btn btn-secondary" onclick="closeAddPersonModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      let currentPowerMapId = null;
+      let people = [];
+
+      // Initialize power map on load
+      async function initPowerMap() {
+        try {
+          // Try to get existing power maps
+          const response = await fetch('/api/power-maps');
+          const maps = await response.json();
+
+          if (maps.length > 0) {
+            currentPowerMapId = maps[0].id;
+          } else {
+            // Create a new power map
+            const createResponse = await fetch('/api/power-maps', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: 'My Organization', description: 'Main power map' })
+            });
+            const newMap = await createResponse.json();
+            currentPowerMapId = newMap.id;
+          }
+
+          loadPeople();
+        } catch (error) {
+          console.error('Error initializing power map:', error);
+        }
+      }
+
+      // Load people from API
+      async function loadPeople() {
+        if (!currentPowerMapId) return;
+
+        try {
+          const response = await fetch(`/api/power-maps/${currentPowerMapId}/people`);
+          people = await response.json();
+          renderPeople();
+        } catch (error) {
+          console.error('Error loading people:', error);
+        }
+      }
+
+      // Render people list
+      function renderPeople() {
+        const listElement = document.getElementById('people-list');
+
+        if (people.length === 0) {
+          listElement.innerHTML = '<div class="empty-state"><p>No people added yet. Click "Add Person" to get started.</p></div>';
+          return;
+        }
+
+        listElement.innerHTML = people.map(person => `
+          <div class="person-item">
+            <div class="person-info">
+              <h4>${person.name}</h4>
+              <p>${person.title} • ${person.department}</p>
+              ${person.notes ? `<p style="margin-top: 0.5rem; font-style: italic;">${person.notes}</p>` : ''}
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+              <span class="influence-badge">Influence: ${person.influence_level}/10</span>
+              <button class="btn btn-secondary" style="padding: 0.5rem 1rem;" onclick="deletePerson('${person.id}')">Remove</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Modal functions
+      function openAddPersonModal() {
+        document.getElementById('add-person-modal').classList.add('active');
+      }
+
+      function closeAddPersonModal() {
+        document.getElementById('add-person-modal').classList.remove('active');
+        document.getElementById('add-person-form').reset();
+      }
+
+      // Add person
+      document.getElementById('add-person-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const data = {
+          name: formData.get('name'),
+          title: formData.get('title'),
+          department: formData.get('department'),
+          influence_level: parseInt(formData.get('influence_level')),
+          notes: formData.get('notes') || null
+        };
+
+        try {
+          const response = await fetch(`/api/power-maps/${currentPowerMapId}/people`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+
+          if (response.ok) {
+            closeAddPersonModal();
+            loadPeople();
+          }
+        } catch (error) {
+          console.error('Error adding person:', error);
+          alert('Failed to add person. Please try again.');
+        }
+      });
+
+      // Delete person
+      async function deletePerson(personId) {
+        if (!confirm('Are you sure you want to remove this person?')) return;
+
+        try {
+          const response = await fetch(`/api/power-maps/${currentPowerMapId}/people/${personId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            loadPeople();
+          }
+        } catch (error) {
+          console.error('Error deleting person:', error);
+        }
+      }
+
+      // Initialize on page load
+      initPowerMap();
+    </script>
+  </body>
+</html>

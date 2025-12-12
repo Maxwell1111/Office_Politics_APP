@@ -12,6 +12,7 @@ from subtext.init_app import app
 from subtext.init_frontend_app import init_frontend_app
 from subtext.memory_cache import SharedMemoryData, create_shared_memory
 from subtext.settings import IS_TEST
+from subtext.routes import power_map
 
 SHARED_MEMORY = create_shared_memory(owner=False)
 
@@ -39,6 +40,9 @@ async def startup():
 async def health() -> PlainTextResponse:
     return PlainTextResponse(content="OK", status_code=200)
 
+
+# Register API routes
+app.include_router(power_map.router, prefix="/api")
 
 init_frontend_app(app)
 
