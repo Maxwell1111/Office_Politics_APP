@@ -103,6 +103,7 @@ module.exports = {
         copyFile('google_workbox_6.1.5-sw.js'),
         copyFile('index.css'),
         copyFile('robots.txt'),
+        copyFile('power-map.html'),
         copyDir('assets'),
       ],
       options: {
