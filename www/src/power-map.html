@@ -172,7 +172,10 @@
       </div>
 
       <div class="card">
-        <h2>Relationships</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2>Relationships</h2>
+          <button class="btn" onclick="openAddRelationshipModal()" id="add-relationship-btn" disabled>+ Add Relationship</button>
+        </div>
         <div id="relationships-list">
           <div class="empty-state">
             <p>Add people first, then define their relationships.</p>
@@ -218,9 +221,57 @@
       </div>
     </div>
 
+    <!-- Add Relationship Modal -->
+    <div id="add-relationship-modal" class="modal">
+      <div class="modal-content">
+        <h3>Add New Relationship</h3>
+        <form id="add-relationship-form">
+          <div class="form-group">
+            <label>From Person *</label>
+            <select name="from_person_id" required id="from-person-select">
+              <option value="">Select a person...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>To Person *</label>
+            <select name="to_person_id" required id="to-person-select">
+              <option value="">Select a person...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Relationship Type *</label>
+            <select name="relationship_type" required>
+              <option value="">Select type...</option>
+              <option value="reports_to">Reports To</option>
+              <option value="manages">Manages</option>
+              <option value="allies">Allies</option>
+              <option value="rivals">Rivals</option>
+              <option value="mentor">Mentor</option>
+              <option value="mentee">Mentee</option>
+              <option value="collaborates">Collaborates With</option>
+              <option value="influences">Influences</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Relationship Strength (1-10) *</label>
+            <input type="number" name="strength" min="1" max="10" value="5" required>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea name="notes" rows="3" placeholder="Optional notes about this relationship..."></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn">Add Relationship</button>
+            <button type="button" class="btn btn-secondary" onclick="closeAddRelationshipModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script>
       let currentPowerMapId = null;
       let people = [];
+      let relationships = [];
 
       // Initialize power map on load
       async function initPowerMap() {
@@ -265,6 +316,7 @@
           }
 
           loadPeople();
+          loadRelationships();
         } catch (error) {
           console.error('Error initializing power map:', error);
           alert('Error initializing power map. Please check the console for details.');
@@ -279,8 +331,32 @@
           const response = await fetch(`/api/power-maps/${currentPowerMapId}/people`);
           people = await response.json();
           renderPeople();
+          updateRelationshipButton();
         } catch (error) {
           console.error('Error loading people:', error);
+        }
+      }
+
+      // Load relationships from API
+      async function loadRelationships() {
+        if (!currentPowerMapId) return;
+
+        try {
+          const response = await fetch(`/api/power-maps/${currentPowerMapId}/relationships`);
+          relationships = await response.json();
+          renderRelationships();
+        } catch (error) {
+          console.error('Error loading relationships:', error);
+        }
+      }
+
+      // Update relationship button state
+      function updateRelationshipButton() {
+        const btn = document.getElementById('add-relationship-btn');
+        if (people.length >= 2) {
+          btn.disabled = false;
+        } else {
+          btn.disabled = true;
         }
       }
 
@@ -373,6 +449,112 @@
           }
         } catch (error) {
           console.error('Error deleting person:', error);
+        }
+      }
+
+      // Render relationships list
+      function renderRelationships() {
+        const listElement = document.getElementById('relationships-list');
+
+        if (relationships.length === 0) {
+          listElement.innerHTML = '<div class="empty-state"><p>No relationships defined yet. Add at least 2 people, then click "Add Relationship".</p></div>';
+          return;
+        }
+
+        listElement.innerHTML = relationships.map(rel => {
+          const fromPerson = people.find(p => p.id === rel.from_person_id);
+          const toPerson = people.find(p => p.id === rel.to_person_id);
+
+          if (!fromPerson || !toPerson) return '';
+
+          const typeLabel = rel.relationship_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+          return `
+            <div class="person-item">
+              <div class="person-info">
+                <h4>${fromPerson.name} → ${toPerson.name}</h4>
+                <p><strong>${typeLabel}</strong> • Strength: ${rel.strength}/10</p>
+                ${rel.notes ? `<p style="margin-top: 0.5rem; font-style: italic;">${rel.notes}</p>` : ''}
+              </div>
+              <button class="btn btn-secondary" style="padding: 0.5rem 1rem;" onclick="deleteRelationship('${rel.id}')">Remove</button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Modal functions for relationships
+      function openAddRelationshipModal() {
+        // Populate person dropdowns
+        const fromSelect = document.getElementById('from-person-select');
+        const toSelect = document.getElementById('to-person-select');
+
+        const options = people.map(p => `<option value="${p.id}">${p.name} (${p.title})</option>`).join('');
+
+        fromSelect.innerHTML = '<option value="">Select a person...</option>' + options;
+        toSelect.innerHTML = '<option value="">Select a person...</option>' + options;
+
+        document.getElementById('add-relationship-modal').classList.add('active');
+      }
+
+      function closeAddRelationshipModal() {
+        document.getElementById('add-relationship-modal').classList.remove('active');
+        document.getElementById('add-relationship-form').reset();
+      }
+
+      // Add relationship
+      document.getElementById('add-relationship-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const data = {
+          from_person_id: formData.get('from_person_id'),
+          to_person_id: formData.get('to_person_id'),
+          relationship_type: formData.get('relationship_type'),
+          strength: parseInt(formData.get('strength')),
+          notes: formData.get('notes') || null
+        };
+
+        console.log('Adding relationship:', data);
+
+        try {
+          const response = await fetch(`/api/power-maps/${currentPowerMapId}/relationships`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+
+          console.log('Response status:', response.status);
+          const responseData = await response.json();
+          console.log('Response data:', responseData);
+
+          if (response.ok) {
+            console.log('Relationship added successfully');
+            closeAddRelationshipModal();
+            loadRelationships();
+          } else {
+            console.error('Failed to add relationship:', responseData);
+            alert(`Failed to add relationship: ${responseData.detail || 'Unknown error'}`);
+          }
+        } catch (error) {
+          console.error('Error adding relationship:', error);
+          alert('Failed to add relationship. Please try again.');
+        }
+      });
+
+      // Delete relationship
+      async function deleteRelationship(relationshipId) {
+        if (!confirm('Are you sure you want to remove this relationship?')) return;
+
+        try {
+          const response = await fetch(`/api/power-maps/${currentPowerMapId}/relationships/${relationshipId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            loadRelationships();
+          }
+        } catch (error) {
+          console.error('Error deleting relationship:', error);
         }
       }
 
