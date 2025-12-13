@@ -1,12 +1,19 @@
-FROM --platform=linux/amd64 nikolaik/python-nodejs:python3.11-nodejs20-alpine 
+FROM --platform=linux/amd64 nikolaik/python-nodejs:python3.11-nodejs20-alpine
 # Might be necessary.
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
-# All the useful binary commands.
+
+# Install build dependencies for cryptography and other packages
 RUN apk update && apk add --no-cache \
     ca-certificates \
     bash \
     curl \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    openssl-dev \
+    cargo \
+    rust \
     && rm -rf /var/cache/apk/*
 
 
@@ -19,7 +26,8 @@ COPY . .
 RUN python -m pip install --no-cache-dir -e .
 
 WORKDIR /app/www
-RUN npm install
+# Install ALL dependencies (including devDependencies) for build
+RUN npm install --include=dev
 RUN npm run build
 
 WORKDIR /app
