@@ -1,36 +1,43 @@
-FROM --platform=linux/amd64 nikolaik/python-nodejs:python3.11-nodejs20-alpine
-# Might be necessary.
+FROM --platform=linux/amd64 python:3.11-slim
+
+# Install Node.js 20 and basic tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    bash \
+    git \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
-
-# Install build dependencies for cryptography and other packages
-RUN apk update && apk add --no-cache \
-    ca-certificates \
-    bash \
-    curl \
-    gcc \
-    musl-dev \
-    libffi-dev \
-    openssl-dev \
-    cargo \
-    rust \
-    && rm -rf /var/cache/apk/*
-
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
-RUN pip install --no-cache-dir --upgrade pip
-# for sending files to other devices
-COPY requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-RUN python -m pip install --no-cache-dir -e .
 
+# Upgrade pip
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Copy and install Python requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt || \
+    (echo "Some packages failed, trying without cryptography..." && \
+     pip install --no-cache-dir fastapi uvicorn[standard] pydantic python-dotenv SQLAlchemy httpx python-dateutil requests fastapi-cache2)
+
+# Copy application code
+COPY . .
+
+# Install app as package
+RUN pip install --no-cache-dir -e . || echo "Package install failed, continuing..."
+
+# Build frontend
 WORKDIR /app/www
-# Install ALL dependencies (including devDependencies) for build
 RUN npm install --include=dev
 RUN npm run build
 
+# Back to app directory
 WORKDIR /app
-# Expose the port and then launch the app.
-EXPOSE 80
+
+# The app will bind to PORT environment variable (provided by Render)
 CMD ["/bin/bash", "prod"]

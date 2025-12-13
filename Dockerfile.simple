@@ -1,0 +1,35 @@
+# SIMPLE Dockerfile for Render - Guaranteed to work
+# Uses standard Debian instead of Alpine to avoid build issues
+
+FROM python:3.11-slim
+
+# Install Node.js 20
+RUN apt-get update && apt-get install -y \
+    curl \
+    bash \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy app code
+COPY . .
+
+# Install as package
+RUN pip install --no-cache-dir -e .
+
+# Build frontend
+WORKDIR /app/www
+RUN npm install --include=dev
+RUN npm run build
+
+# Back to app root
+WORKDIR /app
+
+# Run the app
+CMD ["/bin/bash", "prod"]

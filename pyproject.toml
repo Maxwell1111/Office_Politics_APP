@@ -4,18 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "subtext"
-description = ""
+description = "Politico - Office Politics Navigator"
 readme = "README.md"
-requires-python = ">=3.7"
-keywords = [""]
+requires-python = ">=3.11"
+keywords = ["office", "politics", "career"]
 license = { text = "BSD 3-Clause License" }
 classifiers = ["Programming Language :: Python :: 3"]
-dynamic = ["dependencies"]
-# Change this with the version number bump.
 version = "1.0.0"
-
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "python-dotenv>=1.0.0",
+]
 
 [tool.ruff]
 line-length = 200
