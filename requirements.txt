@@ -1,30 +1,48 @@
-fastapi
-uvicorn[standard]
+# Core dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
 python-multipart
-multipart
+pydantic==2.5.0
+python-dotenv==1.0.0
+
+# Database
+SQLAlchemy==2.0.19
+PyMySQL==1.1.0
+
+# Security & Encryption
+cryptography==41.0.7
+bcrypt==4.1.2
+
+# LLM & AI Integration
+openai==1.6.1
+anthropic==0.8.1
+
+# HTTP & Async
+httpx==0.25.2
+nest-asyncio==1.5.7
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+certifi
+charset-normalizer==3.2.0
+idna==3.4
+typing_extensions==4.7.1
+tzdata==2023.3
+urllib3==2.0.4
+requests==2.31.0
+six==1.16.0
+numpy==1.25.2
+packaging==23.1
 pathvalidate
 concurrent-log-handler
 file_read_backwards
 colorama
-certifi
-charset-normalizer==3.2.0
-idna==3.4
-nest-asyncio==1.5.7
-numpy==1.25.2
-packaging==23.1
-PyMySQL==1.1.0
-python-dateutil==2.8.2
-python-dotenv==1.0.0
-pytz==2023.3
-requests==2.31.0
-six==1.16.0
-SQLAlchemy==2.0.19
-typing_extensions==4.7.1
-tzdata==2023.3
-urllib3==2.0.4
-python-dateutil==2.8.2
 shared-memory-dict==0.7.2
-# development dependencies
+fastapi-cache2
+filelock
+
+# Development dependencies
 black
 mypy
 pylint
@@ -35,15 +53,3 @@ isort
 types-python-dateutil
 pandas-stubs
 pytest
-
-fastapi
-uvicorn[standard]
-python-multipart
-multipart
-pathvalidate
-concurrent-log-handler
-file_read_backwards
-colorama
-fastapi-cache2
-httpx
-filelock
