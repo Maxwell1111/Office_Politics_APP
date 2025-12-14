@@ -36,6 +36,10 @@ def run_background_process() -> subprocess.Popen:  # type: ignore
 
         # Start background processes
         port = os.environ.get("PORT", "80")
+        workers = os.environ.get("WEB_CONCURRENCY", "1")  # Render free tier: use 1 worker
+
+        print(f"Starting uvicorn on port {port} with {workers} workers...")
+
         pro = subprocess.Popen(
             [
                 "uvicorn",
@@ -44,9 +48,9 @@ def run_background_process() -> subprocess.Popen:  # type: ignore
                 "--port",
                 port,
                 "--workers",
-                "8",
+                workers,
                 "--forwarded-allow-ips=*",
-                f"{APP_NAME}.app:app",  # TODO: programmatically pull this name
+                f"{APP_NAME}.app:app",
             ]
         )
         # Trap SIGINT (Ctrl-C) to call the cleanup function
@@ -58,36 +62,16 @@ def run_background_process() -> subprocess.Popen:  # type: ignore
 
 
 def perform_npm_build() -> None:
-    # install first
-    print("Building front end with npm...")
-    cmd_list: list[str] = [
-        "cd",
-        str(WWW.absolute()),
-        "&&",
-        "npm",
-        "install",
-    ]
-    cmd_str = subprocess.list2cmdline(cmd_list)
-    return_code = os.system(cmd_str)
-    if return_code != 0:
-        warn(f"npm install returned {return_code}")
+    """
+    Skip npm build in production - it's already built in Dockerfile
+    This function is kept for local development compatibility
+    """
+    if os.path.exists(WWW / "dist"):
+        print("Frontend already built (found www/dist). Skipping npm build.")
         return
-    # Then build to www/dist
-    cmd_list: list[str] = [
-        "cd",
-        str(WWW.absolute()),
-        "&&",
-        "npm",
-        "run",
-        "build",
-    ]
-    cmd_str = subprocess.list2cmdline(cmd_list)
-    print(f"Running: {cmd_str}, in {WWW.absolute()}...")
-    return_code = os.system(cmd_str)
-    if return_code != 0:
-        warn(f"npm run build returned {return_code}, you will not have a file server")
-        return
-    print("Front end built.")
+
+    print("Warning: www/dist not found. Frontend may not work properly.")
+    print("In production, the frontend should be built during Docker build.")
 
 
 def run_background_tasks() -> None:
@@ -111,23 +95,27 @@ def run_background_tasks() -> None:
 
 
 def main() -> None:
-    # run npm build first
-    # install first
+    # Skip npm build - already done in Dockerfile
     perform_npm_build()
 
-    background_task = Thread(target=run_background_tasks, daemon=True, name="background_tasks")
-    background_task.start()
-    # Use the context manager to run and manage the background process
+    # Skip background tasks for now - not needed for basic functionality
+    # background_task = Thread(target=run_background_tasks, daemon=True, name="background_tasks")
+    # background_task.start()
+
+    print("Starting Politico server...")
+
+    # Use the context manager to run and manage the uvicorn process
     process: subprocess.Popen
     with run_background_process() as process:
-        # Wait for the background process to finish
+        # Wait for the uvicorn process to finish
         assert process is not None
         try:
             rtn = process.wait()
             if rtn != 0:
-                warn(f"Background process returned {rtn}")
+                warn(f"Uvicorn process returned {rtn}")
         except KeyboardInterrupt:
             # Handle Ctrl-C
+            print("\nShutting down gracefully...")
             pass
 
 
