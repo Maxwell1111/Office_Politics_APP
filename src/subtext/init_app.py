@@ -5,14 +5,19 @@
 import os
 from datetime import datetime
 
-from colorama import just_fix_windows_console  # type: ignore
 from fastapi import FastAPI  # type: ignore
 from fastapi.middleware.cors import CORSMiddleware
 
 from subtext.settings import IS_TEST
 from subtext.version import VERSION
 
-just_fix_windows_console()
+# Optional import - only needed for Windows console color support
+try:
+    from colorama import just_fix_windows_console  # type: ignore
+    just_fix_windows_console()
+except ImportError:
+    # Not critical - only affects Windows console colors
+    pass
 
 STARTUP_DATETIME = datetime.now()
 
