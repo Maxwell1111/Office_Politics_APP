@@ -5,14 +5,22 @@ Provides scenario analysis and tone checking using Claude or OpenAI
 
 import os
 import json
-from typing import List, Dict, Any
-from anthropic import Anthropic
+from typing import List, Dict, Any, Optional
+import uuid
+from datetime import datetime, timezone
+
 from subtext.models import (
     StrategyOption, StrategyType, RiskLevel,
     ScenarioAnalysis, ToneAnalysis
 )
-import uuid
-from datetime import datetime, timezone
+
+# Optional import - gracefully handle if not installed
+try:
+    from anthropic import Anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
+    print("Warning: anthropic package not installed. Using mock responses.")
 
 
 class PoliticoLLMService:
@@ -24,7 +32,19 @@ class PoliticoLLMService:
     def __init__(self):
         """Initialize with API key from environment"""
         self.anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
-        self.client = Anthropic(api_key=self.anthropic_key) if self.anthropic_key else None
+        self.client = None
+
+        if ANTHROPIC_AVAILABLE and self.anthropic_key:
+            try:
+                self.client = Anthropic(api_key=self.anthropic_key)
+                print("✅ Anthropic LLM service initialized")
+            except Exception as e:
+                print(f"⚠️ Failed to initialize Anthropic: {e}")
+        else:
+            if not ANTHROPIC_AVAILABLE:
+                print("⚠️ Anthropic package not available - using mock responses")
+            else:
+                print("⚠️ ANTHROPIC_API_KEY not set - using mock responses")
 
     def analyze_scenario(
         self,

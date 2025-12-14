@@ -5,10 +5,17 @@ Ensures user privacy - even admins cannot read encrypted data
 
 import os
 import base64
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
 from typing import Optional
+
+# Optional import - gracefully handle if cryptography is not installed
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+    CRYPTO_AVAILABLE = True
+except ImportError:
+    CRYPTO_AVAILABLE = False
+    print("Warning: cryptography package not installed. Encryption features disabled.")
 
 
 class EncryptionService:
@@ -19,6 +26,12 @@ class EncryptionService:
 
     def __init__(self):
         """Initialize encryption with master key from environment"""
+        if not CRYPTO_AVAILABLE:
+            self.master_key = None
+            self.fernet = None
+            print("⚠️ Encryption service disabled - cryptography package not available")
+            return
+
         self.master_key = self._get_or_create_master_key()
         self.fernet = Fernet(self.master_key)
 
@@ -27,6 +40,9 @@ class EncryptionService:
         Get master encryption key from environment or generate new one
         WARNING: If you lose this key, encrypted data cannot be recovered!
         """
+        if not CRYPTO_AVAILABLE:
+            return b""
+
         key_str = os.environ.get("ENCRYPTION_MASTER_KEY")
 
         if key_str:
@@ -48,6 +64,11 @@ class EncryptionService:
         if not plaintext:
             return ""
 
+        if not CRYPTO_AVAILABLE or not self.fernet:
+            # Encryption not available - return plaintext with warning marker
+            print("⚠️ Encryption not available - storing text unencrypted")
+            return f"[UNENCRYPTED]{plaintext}"
+
         encrypted_bytes = self.fernet.encrypt(plaintext.encode())
         return base64.b64encode(encrypted_bytes).decode()
 
@@ -58,6 +79,13 @@ class EncryptionService:
         """
         if not encrypted_str:
             return ""
+
+        # Handle unencrypted data (when crypto was unavailable)
+        if encrypted_str.startswith("[UNENCRYPTED]"):
+            return encrypted_str.replace("[UNENCRYPTED]", "", 1)
+
+        if not CRYPTO_AVAILABLE or not self.fernet:
+            return "[ENCRYPTED - Cryptography not available]"
 
         try:
             encrypted_bytes = base64.b64decode(encrypted_str.encode())
