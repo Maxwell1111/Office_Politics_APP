@@ -104,6 +104,7 @@ module.exports = {
         copyFile('index.css'),
         copyFile('robots.txt'),
         copyFile('power-map.html'),
+        copyFile('strategic-calendar.html'),
         copyDir('assets'),
       ],
       options: {
