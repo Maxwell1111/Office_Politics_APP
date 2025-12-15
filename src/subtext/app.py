@@ -12,7 +12,7 @@ from subtext.init_app import app
 from subtext.init_frontend_app import init_frontend_app
 from subtext.memory_cache import SharedMemoryData, create_shared_memory
 from subtext.settings import IS_TEST
-from subtext.routes import power_map, stakeholders, analyzer
+from subtext.routes import power_map, stakeholders, analyzer, calendar
 
 SHARED_MEMORY = create_shared_memory(owner=False)
 
@@ -45,6 +45,7 @@ async def health() -> PlainTextResponse:
 app.include_router(power_map.router, prefix="/api")
 app.include_router(stakeholders.router, prefix="/api")
 app.include_router(analyzer.router, prefix="/api")
+app.include_router(calendar.router, prefix="/api")
 
 init_frontend_app(app)
 

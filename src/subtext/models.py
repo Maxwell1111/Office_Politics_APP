@@ -193,3 +193,72 @@ class ToneAnalysis(BaseModel):
 class AnalyzeToneRequest(BaseModel):
     """Request to analyze tone of a message"""
     email_draft: str = Field(..., min_length=10)
+
+
+# ========================================
+# NEW: Strategic Calendar Models
+# ========================================
+
+class PoliticalStakesLevel(str, Enum):
+    """Political stakes level for meetings"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class CalendarEvent(BaseModel):
+    """A calendar event from user's schedule"""
+    id: str
+    title: str
+    start_time: datetime
+    end_time: datetime
+    attendees: List[str] = Field(default_factory=list, description="List of attendee names/emails")
+    location: Optional[str] = None
+    description: Optional[str] = None
+    is_recurring: bool = False
+
+
+class MeetingWarning(BaseModel):
+    """A warning/flag about a meeting"""
+    type: str  # "adversary_present", "power_imbalance", "opportunity", "risk"
+    message: str
+    severity: PoliticalStakesLevel
+
+
+class MeetingInsight(BaseModel):
+    """Strategic insight for a specific meeting"""
+    event_id: str
+    event_title: str
+    start_time: datetime
+    political_stakes: PoliticalStakesLevel
+    matched_stakeholders: List[str] = Field(default_factory=list, description="Stakeholder IDs found in attendees")
+    total_influence_score: int = Field(ge=0, description="Sum of influence levels of all matched stakeholders")
+    warnings: List[MeetingWarning] = Field(default_factory=list)
+    manager_tips: Optional[str] = Field(None, description="Specific tips if manager is present")
+    preparation_advice: str = Field(description="AI-generated advice for this meeting")
+    talking_points: List[str] = Field(default_factory=list, description="Suggested talking points")
+
+
+class CalendarAnalysis(BaseModel):
+    """Complete calendar analysis for a time period"""
+    id: str
+    analysis_period: str = Field(description="e.g., 'Next 7 days'")
+    total_meetings: int
+    high_stakes_count: int
+    meeting_insights: List[MeetingInsight]
+    weekly_summary: str = Field(description="AI-generated strategic summary")
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class ConnectCalendarRequest(BaseModel):
+    """Request to connect calendar"""
+    calendar_type: str = Field(description="'google' or 'ical'")
+    ical_url: Optional[str] = Field(None, description="iCal feed URL if using iCal")
+    google_access_token: Optional[str] = Field(None, description="Google OAuth token if using Google Calendar")
+
+
+class AnalyzeCalendarRequest(BaseModel):
+    """Request to analyze calendar for strategic insights"""
+    days_ahead: int = Field(default=7, ge=1, le=30, description="Number of days to analyze")
+    user_manager_name: Optional[str] = Field(None, description="User's manager name for specific tips")
