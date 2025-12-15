@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Automated Power Map - Office Politics</title>
+    <meta name="description" content="Auto-generate power maps from Google Workspace data" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Roboto', 'Segoe UI', sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+        line-height: 1.6;
+      }
+
+      header {
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 2rem 1rem;
+      }
+
+      .header-content {
+        max-width: 56rem;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 1.875rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.025em;
+      }
+
+      .subtitle {
+        font-size: 0.9375rem;
+        color: #64748b;
+        font-weight: 400;
+      }
+
+      .container {
+        max-width: 56rem;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+      }
+
+      .card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 2.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+
+      h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+        margin-bottom: 1rem;
+      }
+
+      .btn {
+        display: inline-block;
+        background: #1a73e8;
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        text-decoration: none;
+        font-family: inherit;
+      }
+
+      .btn:hover { background: #1557b0; }
+      .btn:active { background: #0d47a1; }
+
+      .btn-secondary {
+        background: white;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+      }
+
+      .btn-secondary:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+
+      .insight-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .insight-box.high {
+        border-left: 3px solid #dc2626;
+        background: #fef2f2;
+      }
+
+      .insight-box.medium {
+        border-left: 3px solid #f59e0b;
+        background: #fffbeb;
+      }
+
+      .insight-title {
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+      }
+
+      .insight-description {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin-bottom: 0.75rem;
+      }
+
+      .insight-action {
+        font-size: 0.875rem;
+        color: #1a73e8;
+        font-weight: 500;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+      }
+
+      .stat-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1a73e8;
+        display: block;
+      }
+
+      .stat-label {
+        font-size: 0.8125rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 3rem;
+        color: #64748b;
+      }
+
+      .network-graph {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+      }
+
+      .node-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .node-item:last-child {
+        border-bottom: none;
+      }
+
+      .centrality-bar {
+        background: #e0f2fe;
+        height: 6px;
+        border-radius: 3px;
+        overflow: hidden;
+        width: 100px;
+        margin-top: 0.25rem;
+      }
+
+      .centrality-fill {
+        background: #1a73e8;
+        height: 100%;
+        transition: width 0.3s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <h1>🤖 Automated Power Map</h1>
+        <p class="subtitle">AI-powered network analysis from your Google Workspace data</p>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="card">
+        <h2>Generate Demo Power Map</h2>
+        <p style="color: #64748b; font-size: 0.9375rem; margin-bottom: 1.5rem;">
+          This demo uses mock data to show how automated power map analysis works.
+          In production, this would connect to your Gmail and Calendar via Google OAuth.
+        </p>
+        <button class="btn" onclick="generateDemo()">Generate Demo Analysis</button>
+      </div>
+
+      <div id="results-container"></div>
+
+      <div style="text-align: center; margin-top: 2rem;">
+        <a href="/" class="btn btn-secondary">← Back to Home</a>
+      </div>
+    </div>
+
+    <script>
+      let currentAnalysis = null;
+
+      async function generateDemo() {
+        const container = document.getElementById('results-container');
+        container.innerHTML = '<div class="loading">🔍 Analyzing your network...</div>';
+
+        try {
+          const response = await fetch('/api/automated-power-map/demo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+          }
+
+          currentAnalysis = await response.json();
+          renderAnalysis(currentAnalysis);
+
+        } catch (error) {
+          console.error('Error generating demo:', error);
+          container.innerHTML = `
+            <div class="card">
+              <p style="color: #dc2626;">Failed to generate demo. ${error.message}</p>
+              <p style="font-size: 0.875rem; margin-top: 0.5rem; color: #64748b;">Check the console for details.</p>
+            </div>
+          `;
+        }
+      }
+
+      function renderAnalysis(analysis) {
+        const container = document.getElementById('results-container');
+
+        let html = `
+          <div class="card">
+            <h2>Network Overview</h2>
+            <div class="stats-grid">
+              <div class="stat-box">
+                <span class="stat-number">${analysis.nodes.length}</span>
+                <span class="stat-label">People in Network</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number">${analysis.edges.length}</span>
+                <span class="stat-label">Connections</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number">${analysis.total_emails_analyzed}</span>
+                <span class="stat-label">Emails Analyzed</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number">${analysis.total_meetings_analyzed}</span>
+                <span class="stat-label">Meetings Analyzed</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>🎯 Strategic Insights</h2>
+            ${renderInsights(analysis.insights)}
+          </div>
+
+          <div class="card">
+            <h2>🔗 Structural Holes (Missing High-Value Connections)</h2>
+            ${renderStructuralHoles(analysis.structural_holes)}
+          </div>
+        `;
+
+        if (analysis.manager_analysis) {
+          html += `
+            <div class="card">
+              <h2>👔 Managing Up Analysis</h2>
+              ${renderManagerAnalysis(analysis.manager_analysis)}
+            </div>
+          `;
+        }
+
+        if (analysis.direct_report_analyses.length > 0) {
+          html += `
+            <div class="card">
+              <h2>👥 Managing Down Analysis</h2>
+              ${renderDirectReports(analysis.direct_report_analyses)}
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="card">
+            <h2>📊 Network Nodes (Top 10 by Centrality)</h2>
+            ${renderNodes(analysis.nodes)}
+          </div>
+        `;
+
+        container.innerHTML = html;
+      }
+
+      function renderInsights(insights) {
+        if (insights.length === 0) {
+          return '<p style="color: #94a3b8;">No insights generated</p>';
+        }
+
+        return insights.map(insight => `
+          <div class="insight-box ${insight.priority}">
+            <div class="insight-title">${insight.title}</div>
+            <div class="insight-description">${insight.description}</div>
+            <div class="insight-action">→ ${insight.actionable_step}</div>
+          </div>
+        `).join('');
+      }
+
+      function renderStructuralHoles(holes) {
+        if (holes.length === 0) {
+          return '<p style="color: #94a3b8;">No structural holes identified</p>';
+        }
+
+        return holes.map(hole => `
+          <div class="insight-box high">
+            <div class="insight-title">
+              ${hole.person_email}
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">
+                (Centrality: ${(hole.centrality_score * 100).toFixed(0)}%)
+              </span>
+            </div>
+            <div class="insight-description">${hole.strategic_value}</div>
+            <div class="insight-action">→ ${hole.recommended_approach}</div>
+            ${hole.mutual_connections.length > 0 ? `
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                Connect through: ${hole.mutual_connections.join(', ')}
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+      }
+
+      function renderManagerAnalysis(manager) {
+        return `
+          <p style="margin-bottom: 1rem;">
+            <strong>Manager:</strong> ${manager.manager_email}<br>
+            <strong>Your Interaction Frequency:</strong> ${manager.your_interaction_frequency} per week<br>
+            <strong>Peer Average:</strong> ${manager.peer_avg_frequency.toFixed(1)} per week<br>
+            <strong>Communication Balance:</strong> <span style="color: ${
+              manager.communication_balance === 'balanced' ? '#16a34a' :
+              manager.communication_balance === 'over_communicating' ? '#f59e0b' : '#dc2626'
+            }; font-weight: 600;">${manager.communication_balance}</span>
+          </p>
+          <div style="background: #f8fafc; padding: 1rem; border-radius: 6px;">
+            <strong style="font-size: 0.875rem;">Recommendations:</strong>
+            <ul style="margin: 0.5rem 0 0 1.5rem; font-size: 0.875rem; color: #475569;">
+              ${manager.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      function renderDirectReports(reports) {
+        return reports.map(report => `
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+            <div style="font-weight: 600; margin-bottom: 0.5rem;">${report.report_email}</div>
+            <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.75rem;">
+              Interactions: ${report.interaction_frequency} |
+              Isolation Risk: <span style="color: ${
+                report.isolation_risk === 'low' ? '#16a34a' :
+                report.isolation_risk === 'medium' ? '#f59e0b' : '#dc2626'
+              }; font-weight: 600;">${report.isolation_risk.toUpperCase()}</span>
+            </div>
+            <ul style="margin: 0 0 0 1.5rem; font-size: 0.875rem; color: #475569;">
+              ${report.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+            </ul>
+          </div>
+        `).join('');
+      }
+
+      function renderNodes(nodes) {
+        // Sort by centrality and take top 10
+        const topNodes = nodes
+          .sort((a, b) => b.centrality_score - a.centrality_score)
+          .slice(0, 10);
+
+        return `
+          <div class="network-graph">
+            ${topNodes.map(node => `
+              <div class="node-item">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9375rem;">
+                    ${node.email}
+                    ${node.is_user ? '<span style="background: #dbeafe; color: #1e40af; padding: 0.125rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">YOU</span>' : ''}
+                    ${node.is_manager ? '<span style="background: #fef3c7; color: #92400e; padding: 0.125rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">MANAGER</span>' : ''}
+                  </div>
+                  <div style="font-size: 0.8125rem; color: #64748b; margin-top: 0.25rem;">
+                    ${node.interaction_count} interactions | Centrality: ${(node.centrality_score * 100).toFixed(0)}%
+                  </div>
+                  <div class="centrality-bar">
+                    <div class="centrality-fill" style="width: ${node.centrality_score * 100}%"></div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    </script>
+  </body>
+</html>

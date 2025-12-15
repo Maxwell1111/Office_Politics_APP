@@ -105,6 +105,7 @@ module.exports = {
         copyFile('robots.txt'),
         copyFile('power-map.html'),
         copyFile('strategic-calendar.html'),
+        copyFile('automated-power-map.html'),
         copyDir('assets'),
       ],
       options: {

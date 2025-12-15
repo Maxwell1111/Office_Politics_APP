@@ -262,3 +262,116 @@ class AnalyzeCalendarRequest(BaseModel):
     """Request to analyze calendar for strategic insights"""
     days_ahead: int = Field(default=7, ge=1, le=30, description="Number of days to analyze")
     user_manager_name: Optional[str] = Field(None, description="User's manager name for specific tips")
+
+
+# ========================================
+# NEW: Automated Power Map Models (Google Workspace Integration)
+# ========================================
+
+class EmailInteraction(BaseModel):
+    """Metadata from an email interaction (no body content)"""
+    from_email: str
+    to_emails: List[str]
+    cc_emails: List[str] = Field(default_factory=list)
+    timestamp: datetime
+    thread_id: Optional[str] = None
+    is_reply: bool = False
+    response_time_hours: Optional[float] = None
+
+
+class MeetingCluster(BaseModel):
+    """Group of people who meet together frequently"""
+    participants: List[str]
+    meeting_count: int
+    avg_duration_minutes: float
+    meeting_titles: List[str] = Field(default_factory=list)
+
+
+class NetworkNode(BaseModel):
+    """A person in the organizational network graph"""
+    email: str
+    name: Optional[str] = None
+    interaction_count: int = 0
+    centrality_score: float = Field(0.0, description="How central/influential this person is in the network")
+    betweenness_score: float = Field(0.0, description="How much this person bridges different groups")
+    is_manager: bool = False
+    is_direct_report: bool = False
+    is_user: bool = False
+
+
+class NetworkEdge(BaseModel):
+    """Connection between two people in the network"""
+    from_email: str
+    to_email: str
+    interaction_count: int
+    email_frequency: int = 0  # How many emails
+    meeting_frequency: int = 0  # How many meetings together
+    reciprocity_score: float = Field(0.0, ge=0.0, le=1.0, description="How mutual is this relationship (0-1)")
+    avg_response_time_hours: Optional[float] = None
+    strength: float = Field(0.0, description="Overall edge weight/strength")
+
+
+class StructuralHole(BaseModel):
+    """A missing connection that could increase influence"""
+    person_email: str
+    person_name: Optional[str] = None
+    centrality_score: float
+    mutual_connections: List[str] = Field(default_factory=list, description="People who connect you to this person")
+    strategic_value: str = Field(description="Why this connection is valuable")
+    recommended_approach: str = Field(description="How to build this connection")
+
+
+class NetworkInsight(BaseModel):
+    """Strategic insight about network position"""
+    insight_type: str  # "structural_hole", "managing_up", "managing_down", "game_theory"
+    priority: str  # "high", "medium", "low"
+    title: str
+    description: str
+    actionable_step: str
+    related_people: List[str] = Field(default_factory=list)
+
+
+class ManagerAnalysis(BaseModel):
+    """Analysis of relationship with manager"""
+    manager_email: str
+    manager_name: Optional[str] = None
+    your_interaction_frequency: int = Field(description="Your emails/meetings with manager per week")
+    peer_avg_frequency: float = Field(description="Average peer interaction with manager")
+    communication_balance: str = Field(description="over_communicating, balanced, under_communicating")
+    response_time_trend: str = Field(description="improving, stable, declining")
+    recommendations: List[str] = Field(default_factory=list)
+
+
+class DirectReportAnalysis(BaseModel):
+    """Analysis of relationships with direct reports"""
+    report_email: str
+    report_name: Optional[str] = None
+    interaction_frequency: int
+    isolation_risk: str = Field(description="low, medium, high")
+    network_connectivity: float = Field(description="How connected they are to the broader team")
+    recommendations: List[str] = Field(default_factory=list)
+
+
+class AutomatedPowerMap(BaseModel):
+    """Complete automated power map from Google Workspace data"""
+    id: str
+    nodes: List[NetworkNode]
+    edges: List[NetworkEdge]
+    structural_holes: List[StructuralHole]
+    insights: List[NetworkInsight]
+    manager_analysis: Optional[ManagerAnalysis] = None
+    direct_report_analyses: List[DirectReportAnalysis] = Field(default_factory=list)
+    data_period_days: int = Field(description="How many days of data analyzed")
+    total_emails_analyzed: int
+    total_meetings_analyzed: int
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class IngestGoogleWorkspaceRequest(BaseModel):
+    """Request to ingest Google Workspace data"""
+    gmail_access_token: str = Field(description="Google OAuth token with Gmail API access")
+    calendar_access_token: Optional[str] = Field(None, description="Google OAuth token for Calendar (can be same as Gmail)")
+    days_back: int = Field(default=30, ge=7, le=90, description="How many days of data to analyze")
+    user_email: str = Field(description="User's email address")
+    manager_email: Optional[str] = Field(None, description="Manager's email for managing-up analysis")
+    direct_report_emails: List[str] = Field(default_factory=list, description="Direct reports for managing-down analysis")
