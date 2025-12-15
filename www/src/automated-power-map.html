@@ -208,13 +208,28 @@
     </header>
 
     <div class="container">
-      <div class="card">
-        <h2>Generate Demo Power Map</h2>
+      <div class="card" id="connection-card">
+        <h2>Connect Your Google Account</h2>
         <p style="color: #64748b; font-size: 0.9375rem; margin-bottom: 1.5rem;">
-          This demo uses mock data to show how automated power map analysis works.
-          In production, this would connect to your Gmail and Calendar via Google OAuth.
+          Connect Gmail and Calendar to automatically analyze your real organizational network.
+          We only read email headers (From/To/CC/timestamps) - <strong>never body content</strong>.
         </p>
-        <button class="btn" onclick="generateDemo()">Generate Demo Analysis</button>
+
+        <div id="connection-status">
+          <p style="color: #94a3b8; font-style: italic;">Checking connection status...</p>
+        </div>
+
+        <div id="connection-actions" style="margin-top: 1.5rem; display: none;">
+          <button class="btn" onclick="connectGoogle()" id="connect-btn">
+            🔗 Connect Google Account
+          </button>
+          <button class="btn" onclick="generateFromOAuth()" id="generate-btn" style="display: none; margin-left: 0.5rem;">
+            Generate Power Map
+          </button>
+          <button class="btn btn-secondary" onclick="generateDemo()" style="margin-left: 0.5rem;">
+            Try Demo Instead
+          </button>
+        </div>
       </div>
 
       <div id="results-container"></div>
@@ -226,6 +241,95 @@
 
     <script>
       let currentAnalysis = null;
+      let isConnected = false;
+      let connectedEmail = null;
+
+      // Check OAuth status on page load
+      async function checkOAuthStatus() {
+        try {
+          const response = await fetch('/api/oauth/google/status');
+          const status = await response.json();
+
+          const statusDiv = document.getElementById('connection-status');
+          const actionsDiv = document.getElementById('connection-actions');
+          const connectBtn = document.getElementById('connect-btn');
+          const generateBtn = document.getElementById('generate-btn');
+
+          if (status.connected) {
+            isConnected = true;
+            connectedEmail = status.user_email;
+
+            statusDiv.innerHTML = `
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 1rem;">
+                <p style="color: #166534; margin: 0;">
+                  ✅ Connected to <strong>${status.user_email}</strong>
+                </p>
+              </div>
+            `;
+
+            connectBtn.style.display = 'none';
+            generateBtn.style.display = 'inline-block';
+          } else {
+            statusDiv.innerHTML = `
+              <div style="background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 1rem;">
+                <p style="color: #92400e; margin: 0;">
+                  ⚠️ Not connected - Click "Connect Google Account" to get started
+                </p>
+              </div>
+            `;
+
+            connectBtn.style.display = 'inline-block';
+            generateBtn.style.display = 'none';
+          }
+
+          actionsDiv.style.display = 'block';
+
+        } catch (error) {
+          console.error('Error checking OAuth status:', error);
+          document.getElementById('connection-actions').style.display = 'block';
+        }
+      }
+
+      // Connect to Google
+      function connectGoogle() {
+        window.location.href = '/api/oauth/google/authorize';
+      }
+
+      // Generate power map from OAuth
+      async function generateFromOAuth() {
+        const container = document.getElementById('results-container');
+        container.innerHTML = '<div class="loading">🔍 Analyzing your Gmail and Calendar data...</div>';
+
+        try {
+          const response = await fetch('/api/automated-power-map/generate-from-oauth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (response.status === 401) {
+            alert('Please connect your Google account first');
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+          }
+
+          currentAnalysis = await response.json();
+          renderAnalysis(currentAnalysis);
+
+        } catch (error) {
+          console.error('Error generating from OAuth:', error);
+          container.innerHTML = `
+            <div class="card">
+              <p style="color: #dc2626;">Failed to generate power map. ${error.message}</p>
+              <p style="font-size: 0.875rem; margin-top: 0.5rem; color: #64748b;">
+                Make sure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured.
+              </p>
+            </div>
+          `;
+        }
+      }
 
       async function generateDemo() {
         const container = document.getElementById('results-container');
@@ -424,6 +528,20 @@
           </div>
         `;
       }
+
+      // Initialize on page load
+      window.addEventListener('DOMContentLoaded', () => {
+        checkOAuthStatus();
+
+        // Check if redirected from OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('connected') === 'true') {
+          // Auto-generate after successful connection
+          setTimeout(() => {
+            document.getElementById('generate-btn')?.click();
+          }, 1000);
+        }
+      });
     </script>
   </body>
 </html>

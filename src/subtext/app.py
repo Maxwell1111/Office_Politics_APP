@@ -12,7 +12,7 @@ from subtext.init_app import app
 from subtext.init_frontend_app import init_frontend_app
 from subtext.memory_cache import SharedMemoryData, create_shared_memory
 from subtext.settings import IS_TEST
-from subtext.routes import power_map, stakeholders, analyzer, calendar, automated_power_map
+from subtext.routes import power_map, stakeholders, analyzer, calendar, automated_power_map, oauth
 
 SHARED_MEMORY = create_shared_memory(owner=False)
 
@@ -47,6 +47,7 @@ app.include_router(stakeholders.router, prefix="/api")
 app.include_router(analyzer.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
 app.include_router(automated_power_map.router, prefix="/api")
+app.include_router(oauth.router, prefix="/api")
 
 init_frontend_app(app)
 

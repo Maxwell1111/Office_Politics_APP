@@ -9,6 +9,7 @@ from subtext.models import AutomatedPowerMap, IngestGoogleWorkspaceRequest
 from subtext.gmail_ingestion import gmail_service
 from subtext.calendar_service import calendar_service
 from subtext.network_analyzer import network_analyzer
+from subtext.google_oauth import google_oauth_service
 
 router = APIRouter(tags=["automated-power-map"])
 
@@ -109,6 +110,78 @@ async def test_automated_power_map() -> dict:
             "Community detection (structural holes)"
         ]
     }
+
+
+@router.post("/automated-power-map/generate-from-oauth")
+async def generate_from_oauth(
+    user_id: str = "default_user",
+    days_back: int = 30,
+    manager_email: str = None,
+    direct_report_emails: list[str] = None
+) -> AutomatedPowerMap:
+    """
+    Generate power map using stored OAuth tokens
+
+    Requires user to have connected Google account via /api/oauth/google/authorize
+
+    Args:
+        user_id: User identifier (defaults to "default_user")
+        days_back: How many days of data to analyze (7-90)
+        manager_email: Optional manager email for managing-up analysis
+        direct_report_emails: Optional list of direct report emails
+    """
+
+    # Get valid access token
+    access_token = google_oauth_service.get_valid_access_token(user_id)
+
+    if not access_token:
+        raise HTTPException(
+            status_code=401,
+            detail="No connected Google account. Please authorize access first at /api/oauth/google/authorize"
+        )
+
+    try:
+        # Get user's email
+        user_email = google_oauth_service.get_user_email(access_token)
+
+        # Fetch real data using OAuth token
+        print(f"Fetching email metadata for {user_email}...")
+        email_interactions = gmail_service.fetch_email_metadata(
+            access_token=access_token,
+            days_back=days_back,
+            max_results=500
+        )
+
+        email_interactions = gmail_service.calculate_response_times(email_interactions)
+        print(f"Fetched {len(email_interactions)} email interactions")
+
+        print("Fetching calendar events...")
+        calendar_events = calendar_service.fetch_google_calendar_events(
+            access_token=access_token,
+            days_ahead=days_back
+        )
+        print(f"Fetched {len(calendar_events)} calendar events")
+
+        # Build power map
+        power_map = network_analyzer.build_power_map(
+            email_interactions=email_interactions,
+            calendar_events=calendar_events,
+            user_email=user_email,
+            manager_email=manager_email,
+            direct_report_emails=direct_report_emails or [],
+            days_analyzed=days_back
+        )
+
+        print(f"Generated power map with {len(power_map.nodes)} nodes")
+        return power_map
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate power map: {str(e)}"
+        )
 
 
 @router.post("/automated-power-map/demo", response_model=AutomatedPowerMap)
