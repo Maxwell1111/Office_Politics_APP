@@ -5,3 +5,8 @@ services:
     runtime: docker
     plan: free
     healthCheckPath: /api/health
+    # IMPORTANT: Set these environment variables in Render Dashboard:
+    # - GOOGLE_CLIENT_ID (from Google Cloud Console)
+    # - GOOGLE_CLIENT_SECRET (from Google Cloud Console)
+    # - ANTHROPIC_API_KEY (from Anthropic Console)
+    # DO NOT commit secrets to this file!
