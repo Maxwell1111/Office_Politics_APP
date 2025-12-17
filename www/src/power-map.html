@@ -323,7 +323,10 @@
       <div class="card">
         <div class="card-header">
           <h2>People in Your Network</h2>
-          <button class="btn" onclick="openAddPersonModal()">+ Add Person</button>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="openUploadCSVModal()">📤 Upload CSV</button>
+            <button class="btn" onclick="openAddPersonModal()">+ Add Person</button>
+          </div>
         </div>
 
         <div id="people-list">
@@ -425,6 +428,36 @@
           <div class="form-actions">
             <button type="button" class="btn btn-secondary" onclick="closeAddRelationshipModal()">Cancel</button>
             <button type="submit" class="btn">Add Relationship</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Upload CSV Modal -->
+    <div id="upload-csv-modal" class="modal">
+      <div class="modal-content">
+        <h3>Upload People from CSV</h3>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem;">
+          <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.5rem;"><strong>CSV Format:</strong></p>
+          <code style="display: block; background: white; padding: 0.75rem; border-radius: 4px; font-size: 0.8125rem; overflow-x: auto;">
+name,title,department,influence_level,notes
+John Doe,Senior Manager,Engineering,8,Key decision maker
+Jane Smith,Director,Product,9,Stakeholder champion
+          </code>
+          <p style="font-size: 0.8125rem; color: #64748b; margin-top: 0.5rem;">
+            <strong>Required:</strong> name, title, department<br>
+            <strong>Optional:</strong> influence_level (1-10, default: 5), notes
+          </p>
+        </div>
+        <form id="upload-csv-form">
+          <div class="form-group">
+            <label>Select CSV File *</label>
+            <input type="file" id="csv-file-input" accept=".csv" required style="padding: 0.5rem;">
+          </div>
+          <div id="csv-upload-status" style="display: none; margin-top: 1rem; padding: 1rem; border-radius: 6px;"></div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeUploadCSVModal()">Cancel</button>
+            <button type="submit" class="btn">Upload CSV</button>
           </div>
         </form>
       </div>
@@ -706,6 +739,96 @@
           console.error('Error deleting relationship:', error);
         }
       }
+
+      // CSV Upload Modal Functions
+      function openUploadCSVModal() {
+        document.getElementById('upload-csv-modal').classList.add('active');
+        // Reset status message
+        const statusDiv = document.getElementById('csv-upload-status');
+        statusDiv.style.display = 'none';
+        statusDiv.innerHTML = '';
+      }
+
+      function closeUploadCSVModal() {
+        document.getElementById('upload-csv-modal').classList.remove('active');
+        document.getElementById('upload-csv-form').reset();
+        const statusDiv = document.getElementById('csv-upload-status');
+        statusDiv.style.display = 'none';
+        statusDiv.innerHTML = '';
+      }
+
+      // Upload CSV
+      document.getElementById('upload-csv-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fileInput = document.getElementById('csv-file-input');
+        const file = fileInput.files[0];
+
+        if (!file) {
+          alert('Please select a file');
+          return;
+        }
+
+        // Show loading state
+        const statusDiv = document.getElementById('csv-upload-status');
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#eff6ff';
+        statusDiv.style.border = '1px solid #dbeafe';
+        statusDiv.style.color = '#1e40af';
+        statusDiv.innerHTML = '⏳ Uploading and processing CSV...';
+
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          const response = await fetch(`/api/power-maps/${currentPowerMapId}/people/upload-csv`, {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            // Show success message
+            statusDiv.style.background = '#f0fdf4';
+            statusDiv.style.border = '1px solid #bbf7d0';
+            statusDiv.style.color = '#15803d';
+
+            let message = `✅ Successfully added ${result.added_count} people!`;
+
+            if (result.errors && result.errors.length > 0) {
+              message += `\n\n⚠️ ${result.error_count} warnings:\n`;
+              result.errors.forEach(error => {
+                message += `• ${error}\n`;
+              });
+            }
+
+            statusDiv.innerHTML = message.replace(/\n/g, '<br>');
+
+            // Reload people list
+            await loadPeople();
+
+            // Close modal after 2 seconds if no errors
+            if (result.error_count === 0) {
+              setTimeout(() => {
+                closeUploadCSVModal();
+              }, 2000);
+            }
+          } else {
+            // Show error message
+            statusDiv.style.background = '#fef2f2';
+            statusDiv.style.border = '1px solid #fecaca';
+            statusDiv.style.color = '#dc2626';
+            statusDiv.innerHTML = `❌ Error: ${result.detail || 'Failed to upload CSV'}`;
+          }
+        } catch (error) {
+          console.error('Error uploading CSV:', error);
+          statusDiv.style.background = '#fef2f2';
+          statusDiv.style.border = '1px solid #fecaca';
+          statusDiv.style.color = '#dc2626';
+          statusDiv.innerHTML = '❌ Error uploading CSV. Please try again.';
+        }
+      });
 
       // Initialize on page load
       initPowerMap();

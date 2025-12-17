@@ -2,10 +2,12 @@
 Power Map API routes
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from typing import List
 import uuid
 from datetime import datetime, timezone
+import csv
+from io import StringIO
 
 from subtext.models import (
     PowerMap,
@@ -168,3 +170,77 @@ async def remove_relationship_from_map(power_map_id: str, relationship_id: str) 
         del relationships[relationship_id]
 
     return {"message": "Relationship removed from power map"}
+
+
+@router.post("/power-maps/{power_map_id}/people/upload-csv")
+async def upload_people_csv(power_map_id: str, file: UploadFile = File(...)) -> dict:
+    """Upload a CSV file with people to add to the power map
+
+    Expected CSV format:
+    name,title,department,influence_level,notes
+    John Doe,Senior Manager,Engineering,8,Key decision maker
+    Jane Smith,Director,Product,9,
+    """
+    if power_map_id not in power_maps:
+        raise HTTPException(status_code=404, detail="Power map not found")
+
+    # Validate file type
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="File must be a CSV")
+
+    try:
+        # Read file content
+        content = await file.read()
+        decoded_content = content.decode('utf-8')
+        csv_reader = csv.DictReader(StringIO(decoded_content))
+
+        added_people = []
+        errors = []
+
+        for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 to account for header
+            try:
+                # Validate required fields
+                if not row.get('name') or not row.get('title') or not row.get('department'):
+                    errors.append(f"Row {row_num}: Missing required fields (name, title, department)")
+                    continue
+
+                # Parse influence level with default
+                influence_level = 5
+                if row.get('influence_level'):
+                    try:
+                        influence_level = int(row['influence_level'])
+                        if influence_level < 1 or influence_level > 10:
+                            errors.append(f"Row {row_num}: Influence level must be between 1-10, using default (5)")
+                            influence_level = 5
+                    except ValueError:
+                        errors.append(f"Row {row_num}: Invalid influence level, using default (5)")
+
+                # Create person
+                person = Person(
+                    id=str(uuid.uuid4()),
+                    name=row['name'].strip(),
+                    title=row['title'].strip(),
+                    department=row['department'].strip(),
+                    influence_level=influence_level,
+                    notes=row.get('notes', '').strip() or None,
+                )
+
+                people[person.id] = person
+                power_maps[power_map_id].people.append(person)
+                added_people.append(person)
+
+            except Exception as e:
+                errors.append(f"Row {row_num}: {str(e)}")
+
+        power_maps[power_map_id].updated_at = datetime.now(timezone.utc)
+
+        return {
+            "message": f"Successfully added {len(added_people)} people",
+            "added_count": len(added_people),
+            "error_count": len(errors),
+            "errors": errors,
+            "people": added_people
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error processing CSV: {str(e)}")

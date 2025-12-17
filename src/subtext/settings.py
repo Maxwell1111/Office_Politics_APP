@@ -4,14 +4,16 @@ Settings
 
 import os
 
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 
 HERE = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 ENV_FILE = os.path.join(PROJECT_ROOT, ".env")
-config = dotenv_values(".env")
+
+# Load .env file into os.environ
+load_dotenv(ENV_FILE)
 
 
 PROJECT_ROOT = os.path.dirname(
